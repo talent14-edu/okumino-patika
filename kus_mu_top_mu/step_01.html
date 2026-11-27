@@ -194,6 +194,24 @@ img{display:block; max-width:100%}
 .dugme.turuncu{background:var(--turuncu); border-color:var(--turuncu-k); color:#fff; box-shadow:0 5px 0 var(--turuncu-k)}
 .dugme.sari{background:var(--sari); border-color:var(--sari-k); color:#4a2e00; box-shadow:0 5px 0 var(--sari-k)}
 
+/* ===== Yaz: harf kartları ===== */
+.yaz-alan{flex:1; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(8px,2vh,20px)}
+.yaz-ipucu{display:flex; align-items:center; gap:clamp(10px,2vw,22px)}
+.yaz-ipucu img{height:clamp(64px,15vh,140px); width:auto; filter:drop-shadow(0 8px 10px rgba(90,50,20,.25))}
+.yuvalar{display:flex; gap:clamp(5px,1vw,10px)}
+.yuva{width:clamp(44px,8.5vh,74px); height:clamp(54px,10.5vh,90px); border-radius:16px; border:3px dashed var(--cizgi-k); background:#fffdf8; display:grid; place-items:center; font:700 clamp(28px,6vh,52px)/1 var(--okuma); color:var(--murekkep); padding:0; transition:background .2s, border-color .2s, transform .12s}
+.yuva.dolu{border-style:solid; border-color:var(--mavi-k); background:#fff}
+.yuva.hatali{border-color:#c62828; background:#ffe6e6; animation:salla .35s}
+.yuva.dogru{border-color:var(--yesil-k); background:#e6f7ea}
+@keyframes salla{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.harfler{display:flex; flex-wrap:wrap; justify-content:center; gap:clamp(6px,1.2vw,12px); max-width:640px}
+.harf{width:clamp(46px,8.5vh,72px); height:clamp(46px,8.5vh,72px); border-radius:16px; border:3px solid var(--cizgi); background:#fff; box-shadow:0 5px 0 var(--cizgi-k); font:700 clamp(26px,5.4vh,44px)/1 var(--okuma); color:var(--murekkep); padding:0; transition:transform .1s}
+.harf:hover{transform:translateY(-2px)}
+.harf:active{transform:translateY(3px); box-shadow:0 2px 0 var(--cizgi-k)}
+.harf:disabled{visibility:hidden}
+.yaz-tus{display:flex; gap:10px}
+.yaz-tus .dugme:disabled{opacity:.45; cursor:not-allowed; transform:none}
+
 /* ===== Etkinlik kartı ===== */
 .etk{
   position:relative; flex:1; min-height:0; display:flex; flex-direction:column; gap:clamp(6px,1.2vh,12px);
@@ -320,6 +338,14 @@ img{display:block; max-width:100%}
   .kitap-adi small{display:none}
 }
 @media (max-width:560px){
+  /* Yaz: dar ekranda kitap resmi gizlenir, 5 kutu + 8 harf tek sütuna sığar */
+  .yaz-ipucu img{display:none}
+  .yaz-alan{gap:10px; justify-content:space-evenly}
+  .yuvalar{gap:5px}
+  .yuva{width:44px; height:54px; font-size:30px; border-radius:12px}
+  .harfler{gap:6px}
+  .harf{width:48px; height:48px; font-size:28px; border-radius:12px; box-shadow:0 4px 0 var(--cizgi-k)}
+  .yaz-tus .dugme{min-height:40px; padding:0 14px; font-size:15px}
   .giris-kart{padding:10px 12px; gap:7px; border-radius:22px; max-height:84%}
   .hazirlik-rozet{font-size:12px; padding:3px 10px}
   .giris-kart h2{font-size:22px}
@@ -483,6 +509,27 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
         </div>
       </section>
 
+      <!-- ETKİNLİK 4: YAZ (harf kartları) -->
+      <section class="panel" id="p-e4" hidden>
+        <div class="etk">
+          <div class="etk-ust">
+            <h2><span>4</span>Yaz!</h2>
+            <div class="etk-sag"><span class="haklar" id="e4Hak" title="Bu sorudan alabileceğin damla"></span><button type="button" class="kucuk-btn metne-bak">📖 Metne bak</button></div>
+          </div>
+          <div class="cekmece" hidden></div>
+          <p class="soru" id="e4Soru">Kitabın kapağındaki hayvanın adını harflerle yaz.</p>
+          <div class="yaz-alan">
+            <div class="yaz-ipucu"><img src="img/step01/kitap_mino.webp" alt="Kapağında tilki olan turuncu kitap"><div class="yuvalar" id="yuvalar"></div></div>
+            <div class="harfler" id="harfler"></div>
+            <div class="yaz-tus">
+              <button type="button" class="dugme" id="yazSil">↺ Temizle</button>
+              <button type="button" class="dugme turuncu" id="yazKontrol" disabled>Kontrol et ✓</button>
+            </div>
+          </div>
+          <div class="mino" id="e4Mino"><img src="img/mino_selam.webp" alt="Mino"><p>Harflere dokun, kutulara yerleşsin.</p></div>
+        </div>
+      </section>
+
       <!-- SONUÇ -->
       <section class="panel" id="p-sonuc" hidden>
         <div class="sifre" id="sonucKutu">
@@ -507,6 +554,7 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
         <button type="button" class="istasyon" data-git="e1" disabled><span class="tas"><img src="img/step01/d_toka.webp" alt=""></span><span>Kim?</span></button>
         <button type="button" class="istasyon" data-git="e2" disabled><span class="tas"><img src="img/step01/d_raf.webp" alt=""></span><span>Bul!</span></button>
         <button type="button" class="istasyon" data-git="e3" disabled><span class="tas"><img src="img/step01/d_gozluk.webp" alt=""></span><span>Doğru mu?</span></button>
+        <button type="button" class="istasyon" data-git="e4" disabled><span class="tas"><img src="img/step01/kalem.webp" alt=""></span><span>Yaz!</span></button>
         <button type="button" class="istasyon" data-git="sonuc" disabled><span class="tas"><img src="img/step01/d_kus.webp" alt=""></span><span>Sonuç</span></button>
       </div>
     </nav>
@@ -629,7 +677,7 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
 
   // ===== Sözlük =====
   $$('.kelime').forEach(k => {
-    const goster = () => { const s = $('#sozluk'); s.innerHTML = `<b>${k.dataset.kelime}:</b> ${k.dataset.anlam}`; s.hidden = false; sigdir(); cal('tik'); };
+    const goster = () => { SOZLUK.add(k.dataset.kelime); const s = $('#sozluk'); s.innerHTML = `<b>${k.dataset.kelime}:</b> ${k.dataset.anlam}`; s.hidden = false; sigdir(); cal('tik'); };
     k.onclick = goster;
     k.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goster(); } };
   });
@@ -641,6 +689,11 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
     TAHMIN = b.textContent.replace(/^\S+\s*/, '').trim();
   });
 
+  // ===== Kanıt sayaçları (kod_havuzu.md) =====
+  let METIN_ACMA = 0;            // "Metne bak" kaç kez açıldı
+  const SOZLUK = new Set();      // dokunulan sözlük kelimeleri
+  const SORULAR = [];
+
   // ===== Metne bak =====
   const metinHtml = SATIRLAR.map(s => `<p>${s}</p>`).join('');
   $$('.cekmece').forEach(c => c.innerHTML = metinHtml);
@@ -648,6 +701,7 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
     const etk = b.closest('.etk'), c = etk.querySelector('.cekmece'), ust = etk.querySelector('.etk-ust');
     c.style.top = (ust.offsetTop + ust.offsetHeight + 6) + 'px';
     c.hidden = !c.hidden; b.textContent = c.hidden ? '📖 Metne bak' : '✕ Metni kapat'; cal('tik');
+    if (!c.hidden) METIN_ACMA++;
   });
 
   // ===== SESLİ OKUMA: Vids anlatıcısı + kelime takibi =====
@@ -712,7 +766,7 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
   })();
 
   // ===== Patika =====
-  const SIRA = ['giris', 'oku', 'e1', 'e2', 'e3', 'sonuc'];
+  const SIRA = ['giris', 'oku', 'e1', 'e2', 'e3', 'e4', 'sonuc'];
   let acik = 0;
   function git(ad, sesli) {
     const n = SIRA.indexOf(ad);
@@ -724,7 +778,8 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
       ist.classList.toggle('ok', i < acik && i !== n);
       ist.disabled = i > acik;
     });
-    $('#rayDolu').style.strokeDasharray = `${acik * 20} 100`;
+    $('#rayDolu').style.strokeDasharray = `${acik * 100 / (SIRA.length - 1)} 100`;
+    SORULAR.filter(q => q.etk === ad && q.t0 == null).forEach(q => { q.t0 = performance.now(); q.m0 = METIN_ACMA; });
     if (sesli) cal('gecis');
     if (ad === 'oku') requestAnimationFrame(sigdir);
   }
@@ -739,12 +794,20 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
   // ===== DAMLA PUANI =====
   // Bir soru: seçenek sayısı kadar damla (en çok 3). Her yanlış 1 damla düşürür, en az 1.
   // Doğru bulunmadan ilerlenmez; her sorunun deneme sayısı kaydedilir.
-  const ETK_AD = { e1: 'Kim? Nerede? Ne zaman?', e2: 'Rafta Bul!', e3: 'Doğru mu, Yanlış mı?' };
+  const ETK_AD = { e1: 'Kim? Nerede? Ne zaman?', e2: 'Rafta Bul!', e3: 'Doğru mu, Yanlış mı?', e4: 'Yaz!' };
+  // Her etkinliğin Maarif kodları ve Öğrenme-Öğretme Uygulaması (kod_havuzu.md)
+  const KOD = {
+    e1: { kodlar: ['T.O.2.3.a', 'KB1'], uygulama: 'U10', kanit: 'yanit' },
+    e2: { kodlar: ['T.O.2.3.a', 'KB1', 'OB4'], uygulama: 'U10', kanit: 'yanit' },
+    e3: { kodlar: ['T.O.2.3.a', 'KB2.10'], uygulama: 'U10', kanit: 'yanit' },
+    e4: { kodlar: ['T.Y.2.3.c', 'T.O.2.3.a', 'KB1'], uygulama: 'U11', kanit: 'uretim' }
+  };
   const KAYIT = [];
   let toplam = 0;
   function soru(etk, ad, secenek, hakEl) {
-    const q = { etk, ad, maks: Math.min(3, secenek), yanlis: 0, hakEl };
-    hakCiz(q); return q;
+    const q = { etk, ad, maks: Math.min(3, secenek), yanlis: 0, hakEl, t0: null, m0: 0 };
+    if (!$('#p-' + etk).hidden) { q.t0 = performance.now(); q.m0 = METIN_ACMA; }
+    SORULAR.push(q); hakCiz(q); return q;
   }
   const kalanPuan = q => Math.max(1, q.maks - q.yanlis);
   function hakCiz(q) {
@@ -754,7 +817,9 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
   function yanlisCevap(q) { q.yanlis++; hakCiz(q); cal('yanlis'); }
   function dogruCevap(q, el) {
     const puan = kalanPuan(q);
-    KAYIT.push({ etkinlik: q.etk, soru: q.ad, deneme: q.yanlis + 1, puan, maks: q.maks });
+    KAYIT.push({ etkinlik: q.etk, soru: q.ad, ...KOD[q.etk], deneme: q.yanlis + 1, puan, maks: q.maks,
+      metne_bakti: METIN_ACMA > q.m0, sure_ms: q.t0 == null ? null : Math.round(performance.now() - q.t0),
+      ...(q.uretim ? { uretim: q.uretim } : {}) });
     toplam += puan;
     $('#damlaSay').textContent = toplam;
     const d = $('#damla'); d.classList.remove('pop'); void d.offsetWidth; d.classList.add('pop');
@@ -839,7 +904,7 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
         dogruCevap(q, b); satir.classList.add('tamam'); $('.haklar', satir).remove();
         $('.dy-tus', satir).outerHTML = `<div class="dy-sonuc"><b>${s.c === 'D' ? '👍 Doğru' : '👎 Yanlış'}</b><span>${s.not}</span></div>`;
         e3kalan--;
-        if (e3kalan === 0) { mino('#e3Mino', 'Hepsini bildin! Şifre seni bekliyor.', 'iyi'); bitir(); }
+        if (e3kalan === 0) { mino('#e3Mino', 'Hepsini bildin! Şimdi harflerle yazma zamanı.', 'iyi'); ilerle('e4'); }
         else mino('#e3Mino', `Süper! ${e3kalan} cümle kaldı.`, 'iyi');
       } else {
         b.classList.add('yanlis'); yanlisCevap(q); b.disabled = true;
@@ -848,7 +913,54 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
     });
   });
 
-  const MAKS = E1.length * 3 + 3 + E3.length * 2;
+  // ===== Etkinlik 4: harf kartlarıyla yaz =====
+  // Havuzda bilerek noktasız I var: İ / I karışıklığı 2. sınıfta sık görülen yazım hatası.
+  const YAZ = { cevap: ['T', 'İ', 'L', 'K', 'İ'], havuz: ['T', 'İ', 'L', 'K', 'İ', 'I', 'E', 'R'] };
+  const e4q = soru('e4', 'Kapaktaki hayvanın adı (TİLKİ)', 3, $('#e4Hak'));
+  e4q.uretim = [];
+  const yuva = Array(YAZ.cevap.length).fill(null);   // her kutuda hangi harf kartı (indeks)
+  const harfSira = karistir(YAZ.havuz.map((h, i) => ({ h, i })));
+  $('#yuvalar').innerHTML = yuva.map((_, i) => `<button type="button" class="yuva" data-y="${i}" aria-label="${i + 1}. harf"></button>`).join('');
+  $('#harfler').innerHTML = harfSira.map(x => `<button type="button" class="harf" data-h="${x.i}">${x.h}</button>`).join('');
+  function yazCiz() {
+    $$('#yuvalar .yuva').forEach((b, i) => {
+      b.textContent = yuva[i] == null ? '' : YAZ.havuz[yuva[i]];
+      b.classList.toggle('dolu', yuva[i] != null);
+    });
+    $$('#harfler .harf').forEach(b => b.disabled = yuva.includes(Number(b.dataset.h)));
+    $('#yazKontrol').disabled = yuva.includes(null);
+  }
+  $$('#harfler .harf').forEach(b => b.onclick = () => {
+    const bos = yuva.indexOf(null); if (bos < 0) return;
+    yuva[bos] = Number(b.dataset.h); cal('tik'); yazCiz();
+  });
+  $$('#yuvalar .yuva').forEach(b => b.onclick = () => {
+    const i = Number(b.dataset.y); if (yuva[i] == null || b.classList.contains('dogru')) return;
+    yuva[i] = null; b.classList.remove('hatali'); cal('tik'); yazCiz();
+  });
+  $('#yazSil').onclick = () => { yuva.fill(null); $$('#yuvalar .yuva').forEach(b => b.classList.remove('hatali')); cal('tik'); yazCiz(); };
+  $('#yazKontrol').onclick = () => {
+    const yazilan = yuva.map(i => YAZ.havuz[i]);
+    e4q.uretim.push(yazilan.join(''));
+    const yanlisYer = yazilan.map((h, i) => h !== YAZ.cevap[i]);
+    if (!yanlisYer.includes(true)) {
+      $$('#yuvalar .yuva').forEach(b => b.classList.add('dogru'));
+      $$('#harfler .harf, #yazSil, #yazKontrol').forEach(b => b.disabled = true);
+      dogruCevap(e4q, $('#yazKontrol'));
+      mino('#e4Mino', 'TİLKİ! Kitabın kahramanı Mino bir tilki.', 'iyi');
+      setTimeout(bitir, 1100);
+      return;
+    }
+    yanlisCevap(e4q);
+    $$('#yuvalar .yuva').forEach((b, i) => b.classList.toggle('hatali', yanlisYer[i]));
+    const noktasiz = yazilan.some((h, i) => h === 'I' && YAZ.cevap[i] === 'İ');
+    mino('#e4Mino', noktasiz ? 'Neredeyse! Bu kelimedeki i harflerinin üstünde nokta var: İ.'
+      : 'Kırmızı kutulara bir daha bak. Kelime T harfiyle başlıyor.', 'dur');
+    setTimeout(() => { yanlisYer.forEach((y, i) => { if (y) yuva[i] = null; }); $$('#yuvalar .yuva').forEach(b => b.classList.remove('hatali')); yazCiz(); }, 1300);
+  };
+  yazCiz();
+
+  const MAKS = E1.length * 3 + 3 + E3.length * 2 + 3;
   $('#damlaMaks').textContent = MAKS;
   $('.skor span').textContent = `/ ${MAKS} damla 💧`;
 
@@ -856,7 +968,7 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
     $('#damla').classList.add('kazandi');
     const oran = toplam / MAKS;
     $('#sonucBaslik').textContent = oran >= .9 ? 'Harika okudun! Adım 1 tamam!' : oran >= .6 ? 'Aferin! Adım 1 tamam!' : 'Bravo, Adım 1 tamam!';
-    $('#ozet').innerHTML = ['e1', 'e2', 'e3'].map(e => {
+    $('#ozet').innerHTML = ['e1', 'e2', 'e3', 'e4'].map(e => {
       const k = KAYIT.filter(x => x.etkinlik === e);
       const p = k.reduce((a, x) => a + x.puan, 0), m = k.reduce((a, x) => a + x.maks, 0), d = k.reduce((a, x) => a + x.deneme, 0);
       return `<div><span>${ETK_AD[e]}</span><em>💧 ${p} / ${m}</em><small>${k.length} soru · ${d} deneme</small></div>`;
@@ -870,7 +982,14 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
     });
     // Sonucu dışarı ver: üst sayfa (Okumino / CTF) dinleyebilir; tarayıcıda da saklanır.
     const sonuc = { tip: 'okumino:adim-bitti', kitap: 'kus_mu_top_mu', adim: ADIM, damla: toplam, maks: MAKS,
-      deneme: KAYIT.reduce((a, x) => a + x.deneme, 0), sorular: KAYIT, tahmin: TAHMIN, dinleme: DINLEME, zaman: new Date().toISOString() };
+      deneme: KAYIT.reduce((a, x) => a + x.deneme, 0), sorular: KAYIT, tahmin: TAHMIN, dinleme: DINLEME,
+      olaylar: [
+        { madde: 'giris.tahmin', kodlar: ['T.O.2.2.b', 'KB2.11', 'KB2.12', 'OB4', 'E1.1'], uygulama: 'U3', kanit: 'davranis', deger: TAHMIN },
+        { madde: 'oku.dinle', kodlar: ['T.D.2.1.b', 'D14.3', 'SDB2.1'], uygulama: 'U4', kanit: 'davranis', deger: DINLEME },
+        { madde: 'oku.sozluk', kodlar: ['KB1', 'KB2.6', 'T.Y.2.3.b'], uygulama: 'U7', kanit: 'davranis', deger: [...SOZLUK] },
+        { madde: 'metne_bak', kodlar: ['E1.2'], uygulama: 'U10', kanit: 'davranis', deger: METIN_ACMA }
+      ],
+      zaman: new Date().toISOString() };
     sakla('kus_mu_top_mu_adim' + ADIM, JSON.stringify(sonuc));
     try { if (window.parent !== window) window.parent.postMessage(sonuc, '*'); } catch (e) {}
     document.dispatchEvent(new CustomEvent('okumino:adim-bitti', { detail: sonuc }));
