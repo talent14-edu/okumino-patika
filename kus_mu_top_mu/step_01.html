@@ -686,7 +686,7 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
   $$('#tahminSec button').forEach(b => b.onclick = () => {
     $$('#tahminSec button').forEach(x => x.classList.remove('secili'));
     b.classList.add('secili'); $('#tahminNot').hidden = false; $('#okumayaBasla').hidden = false; cal('tik');
-    TAHMIN = b.textContent.replace(/^\S+\s*/, '').trim();
+    TAHMIN = b.lastChild.textContent.trim();   // <i>emoji</i> sonrası metin (emoji ile metin arasında boşluk yok)
   });
 
   // ===== Kanıt sayaçları (kod_havuzu.md) =====
