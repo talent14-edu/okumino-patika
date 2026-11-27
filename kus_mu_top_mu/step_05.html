@@ -237,6 +237,39 @@ img{display:block; max-width:100%}
 .kkartlar .kkart:disabled{visibility:hidden}
 .rozet-okuma{display:inline-flex; align-items:center; gap:8px; padding:6px 16px; border-radius:999px; background:#fff; border:3px solid var(--sari-k); font:800 clamp(14px,2.2vh,18px) var(--baslik); color:var(--turuncu-k)}
 
+/* ===== Öğretmen: okuma raporu ===== */
+.rapor-ortu{position:fixed; inset:0; z-index:50; display:grid; place-items:center; padding:12px; background:rgba(60,30,10,.38)}
+.rapor-ortu[hidden]{display:none}
+.rapor{width:min(1000px,100%); max-height:100%; overflow:auto; display:flex; flex-direction:column; gap:12px; padding:clamp(12px,2vh,22px) clamp(14px,2vw,24px); border-radius:24px; background:#fffdf8; border:2px solid var(--cizgi); box-shadow:0 24px 60px -20px rgba(60,30,10,.55)}
+.rapor-ust{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
+.rapor-ust h2{margin:0; font:800 clamp(18px,2.8vh,24px) var(--baslik); color:var(--mavi-k)}
+.rapor-ust small{display:block; font:700 13px var(--metin); color:var(--gri)}
+.durum-cip{padding:5px 12px; border-radius:999px; font:800 13px var(--baslik)}
+.durum-cip.bekle{background:#fff4cc; color:#6b4700}
+.durum-cip.tahmin{background:var(--mavi-a); color:var(--mavi-k)}
+.durum-cip.onay{background:var(--yesil-a); color:var(--yesil-k)}
+.olcu{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px}
+.olcu div{display:flex; flex-direction:column; gap:2px; padding:10px 14px; border-radius:16px; background:#fff; border:2px solid var(--cizgi)}
+.olcu b{font:800 clamp(22px,3.6vh,30px)/1.1 var(--baslik); color:var(--murekkep)}
+.olcu span{font:700 13px/1.3 var(--metin); color:var(--gri)}
+.olcu em{font:800 13px var(--baslik); font-style:normal; color:var(--turuncu-k)}
+.rapor-metin{padding:12px 16px; border-radius:16px; background:#fff; border:2px solid var(--cizgi); font:400 clamp(17px,2.6vh,21px)/2.1 var(--okuma); color:var(--murekkep)}
+.rapor-metin button{font:inherit; color:inherit; border:0; cursor:pointer; padding:0 3px; border-radius:6px}
+.rk.atlama{background:#fde3e3; color:#9e1c1c; text-decoration:line-through; text-decoration-thickness:2px}
+.rk.yanlis{position:relative; background:#ffe6c7; box-shadow:inset 0 -3px 0 #d9822b}
+.rk.yanlis sup{position:absolute; left:50%; top:-1.05em; transform:translateX(-50%); white-space:nowrap; padding:0 5px; border-radius:6px; background:#d9822b; color:#fff; font:700 12px/1.5 var(--metin)}
+.rapor-metin .ek{display:inline-block; vertical-align:middle; padding:0 7px; border-radius:8px; background:#eceff5; color:#4a4f5c; font:700 13px/1.7 var(--metin)}
+.rapor-metin .iptal{background:#e6f7ea; color:var(--yesil-k); text-decoration:none; box-shadow:none}
+.rapor-metin .iptal sup{background:var(--yesil-k)}
+.rapor-bos{font:700 15px var(--metin); color:var(--gri)}
+.lejant{display:flex; flex-wrap:wrap; gap:6px 14px; font:700 13px var(--metin); color:var(--gri)}
+.lejant i{display:inline-block; width:14px; height:14px; margin-right:5px; border-radius:4px; vertical-align:-2px}
+.rapor-alt{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:end}
+.rapor-alt p{margin:0; font:600 13px/1.45 var(--metin); color:var(--gri)}
+.rapor-alt p b{color:var(--murekkep)}
+.rapor-alt .dugme:disabled{opacity:.5; cursor:default; transform:none}
+@media (max-width:700px){ .olcu{grid-template-columns:repeat(2,minmax(0,1fr))} .rapor-alt{grid-template-columns:1fr} }
+
 /* ===== Yaz: harf kartları ===== */
 .yaz-alan{flex:1; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(8px,2vh,20px)}
 .yaz-ipucu{display:flex; align-items:center; gap:clamp(10px,2vw,22px)}
@@ -466,6 +499,9 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
         <span class="kademe" id="harfKademe" title="Harf aralığı"><i></i><i></i><i></i><i></i><i></i></span>
         <button type="button" id="harfArttir" aria-label="Harf aralığını artır"><span class="harf-ikon">←→</span></button>
       </div>
+      <div class="arac" id="raporArac" hidden>
+        <button type="button" id="raporBtn" aria-label="Okuma raporu (öğretmen)">📊 Rapor</button>
+      </div>
       <div class="arac">
         <button type="button" class="ses-btn" id="sesBtn" aria-pressed="true" aria-label="Sesi aç/kapat">🔊</button>
       </div>
@@ -630,6 +666,29 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
         <button type="button" class="istasyon" data-git="sonuc" disabled><span class="tas"><img src="img/step05/n_canta.webp" alt=""></span><span>Sonuç</span></button>
       </div>
     </nav>
+  </div>
+  <!-- ÖĞRETMEN: okuma raporu (?ogretmen=1) -->
+  <div class="rapor-ortu" id="raporOrtu" hidden>
+    <section class="rapor" role="dialog" aria-modal="true" aria-labelledby="raporBaslik">
+      <div class="rapor-ust">
+        <div><h2 id="raporBaslik">📊 Okuma raporu</h2><small>Sayfa 5 · Son simit · soğuk okuma (çocuk sayfayı ilk kez kendisi okudu)</small></div>
+        <span class="durum-cip" id="raporDurum"></span>
+        <button type="button" class="dugme" id="raporKapat">✕ Kapat</button>
+      </div>
+      <div class="olcu" id="raporOlcu"></div>
+      <div class="lejant">
+        <span><i style="background:#fde3e3"></i>Atlandı</span>
+        <span><i style="background:#ffe6c7"></i>Yanlış okundu (üstte duyulan)</span>
+        <span><i style="background:#eceff5"></i>+ Ekleme / tekrar (tekrar hata sayılmaz)</span>
+        <span><i style="background:#e6f7ea"></i>Öğretmen: hata değil</span>
+      </div>
+      <div class="rapor-metin" id="raporMetin"></div>
+      <div class="rapor-alt">
+        <p>Öz değerlendirme: <b id="raporOzdeg">–</b><br>Duyulan (Whisper): <span id="raporDuyulan">–</span><br>
+          İşaretli bir kelimeye dokunursanız “hata değil” olarak düzeltilir, ölçüler yeniden hesaplanır. Ses kaydı saklanmaz.</p>
+        <button type="button" class="dugme turuncu" id="raporOnay">✓ Raporu onayla</button>
+      </div>
+    </section>
   </div>
 </article>
 
@@ -1007,6 +1066,69 @@ const OKUMA_ZAMAN = /*ZAMAN*/[0.0,0.52,2.04,2.5,2.94,3.2,3.34,3.58,4.62,4.9,5.34
     }
     return { hazirla, veri: D };
   })();
+
+  // ===== Öğretmen: okuma raporu (?ogretmen=1) =====
+  const OGRETMEN = new URLSearchParams(location.search).get('ogretmen') === '1';
+  const IPTAL = new Set();   // öğretmenin "hata değil" dediği hatalar (D.hatalar indeksi)
+  function raporHesapla() {
+    const D = OKUMA.veri; if (!D.hatalar) return;
+    if (!D.otomatik) D.otomatik = { dogru: D.dogru, dogruluk: D.dogruluk, dk_dogru_kelime: D.dk_dogru_kelime, hata_sayisi: D.hata_sayisi };
+    const gecerli = D.hatalar.filter((h, i) => !IPTAL.has(i));
+    D.dogru = D.kelime - gecerli.filter(h => h.tip === 'atlama' || h.tip === 'yanlis_okuma').length;
+    D.hata_sayisi = gecerli.filter(h => h.tip !== 'tekrar').length;
+    D.dogruluk = +(D.dogru / D.kelime).toFixed(3);
+    D.dk_dogru_kelime = D.okuma_sn > 0 ? Math.round(D.dogru / (D.okuma_sn / 60)) : null;
+    D.ogretmen_iptal = [...IPTAL];
+  }
+  function raporCiz() {
+    if ($('#raporOrtu').hidden) return;
+    const D = OKUMA.veri, bekliyor = ['kaydediyor', 'cozuluyor'].includes(D.durum), var_ = D.durum === 'otomatik_tahmin';
+    const cip = $('#raporDurum');
+    cip.className = 'durum-cip ' + (D.ogretmen_onayi ? 'onay' : bekliyor ? 'bekle' : 'tahmin');
+    cip.textContent = D.ogretmen_onayi ? '✓ Öğretmen onayladı' : bekliyor ? (D.durum === 'kaydediyor' ? '🎙️ Çocuk okuyor…' : '⏳ Analiz ediliyor…')
+      : var_ ? 'Otomatik tahmin · onay bekliyor'
+      : ({ baslamadi: 'Henüz okuma yok', mikrofon_yok: 'Mikrofon kullanılamadı', yetersiz_ses: 'Ses çok kısa (3 sn altı)', model_yok: 'Model yüklenemedi' }[D.durum] || D.durum);
+    const yuzde = var_ ? Math.round(D.dogruluk * 100) : null;
+    const duzey = !var_ ? '' : yuzde >= 95 ? 'Bağımsız okuyor' : yuzde >= 90 ? 'Destekle okuyor' : 'Zorlanıyor';
+    const sn = x => String(x).replace('.', ',');
+    $('#raporOlcu').innerHTML = [
+      [var_ ? `%${yuzde}` : '–', var_ ? `Doğruluk · ${D.dogru}/${D.kelime} kelime` : 'Doğruluk', duzey],
+      [var_ && D.dk_dogru_kelime != null ? D.dk_dogru_kelime : '–', 'Dakikada doğru okunan kelime'],
+      [D.okuma_sn ? `${sn(D.okuma_sn)} sn` : '–', 'Okuma süresi (sessizlik hariç)'],
+      [D.duraklama != null ? D.duraklama : '–', `Duraklama (0,5 sn üstü) · metinde ${D.noktalama || 0} noktalama`]
+    ].map(([b, t, e]) => `<div><b>${b}</b><span>${t}</span>${e ? `<em>${e}</em>` : ''}</div>`).join('');
+    if (!var_) {
+      $('#raporMetin').innerHTML = `<span class="rapor-bos">${bekliyor ? 'Çocuk okumayı bitirince analiz burada görünür. Bu sırada diğer etkinliklere devam edebilir.' : 'Gösterilecek okuma analizi yok.'}</span>`;
+    } else {
+      const B = SATIRLAR.join(' ').split(/\s+/), kelimeHata = {}, ekler = {};
+      D.hatalar.forEach((h, i) => { if (h.tip === 'atlama' || h.tip === 'yanlis_okuma') kelimeHata[h.sira] = { h, i }; else (ekler[h.sira] = ekler[h.sira] || []).push({ h, i }); });
+      let html = '';
+      for (let k = 0; k <= B.length; k++) {
+        (ekler[k] || []).forEach(({ h, i }) => { html += `<button type="button" class="ek${IPTAL.has(i) ? ' iptal' : ''}" data-h="${i}" title="${h.tip === 'tekrar' ? 'Tekrar (hata sayılmaz)' : 'Ekleme'}">+${h.duyulan}</button> `; });
+        if (k === B.length) break;
+        const x = kelimeHata[k];
+        html += !x ? `<span class="rk">${B[k]}</span> `
+          : `<button type="button" class="rk ${x.h.tip === 'atlama' ? 'atlama' : 'yanlis'}${IPTAL.has(x.i) ? ' iptal' : ''}" data-h="${x.i}" title="${x.h.tip === 'atlama' ? 'Atlandı' : 'Okunan: ' + x.h.duyulan} · dokun: hata değil">${B[k]}${x.h.tip === 'yanlis_okuma' ? `<sup>${x.h.duyulan}</sup>` : ''}</button> `;
+      }
+      $('#raporMetin').innerHTML = html;
+      $$('#raporMetin [data-h]').forEach(b => b.onclick = () => {
+        const i = Number(b.dataset.h); IPTAL.has(i) ? IPTAL.delete(i) : IPTAL.add(i);
+        D.ogretmen_onayi = false; raporHesapla(); raporCiz(); sonucGuncelle();
+      });
+    }
+    $('#raporOzdeg').textContent = { kolay: '😊 Kolaydı', biraz: '🙂 Biraz zorlandım', zor: '😟 Çok zorlandım' }[D.oz_degerlendirme] || '–';
+    $('#raporDuyulan').textContent = D.duyulan || '–';
+    $('#raporOnay').disabled = !var_ || D.ogretmen_onayi;
+    $('#raporOnay').textContent = D.ogretmen_onayi ? '✓ Onaylandı' : '✓ Raporu onayla';
+  }
+  let raporSaat = 0;
+  if (OGRETMEN) $('#raporArac').hidden = false;
+  $('#raporBtn').onclick = () => { $('#raporOrtu').hidden = false; raporCiz(); clearInterval(raporSaat); raporSaat = setInterval(raporCiz, 1500); };
+  const raporKapat = () => { $('#raporOrtu').hidden = true; clearInterval(raporSaat); };
+  $('#raporKapat').onclick = raporKapat;
+  $('#raporOrtu').onclick = e => { if (e.target.id === 'raporOrtu') raporKapat(); };
+  addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#raporOrtu').hidden) raporKapat(); });
+  $('#raporOnay').onclick = () => { const D = OKUMA.veri; raporHesapla(); D.ogretmen_onayi = true; D.kanit = 'ogretmen'; raporCiz(); sonucGuncelle(); };
 
   // ===== Etkinlik 1: olayları sırala =====
   const e1q = soru('e1', 'Olay sırası (4 kart)', 3, $('#e1Hak'));
