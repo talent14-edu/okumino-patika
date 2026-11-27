@@ -165,6 +165,16 @@ img{display:block; max-width:100%}
 .oku-resim img{width:100%; height:100%; object-fit:cover}
 .oku-sag{min-height:0; display:flex; flex-direction:column; gap:clamp(6px,1vh,10px)}
 .bolum-baslik{margin:0; font:800 clamp(22px,3.6vh,32px)/1.1 var(--baslik); color:var(--turuncu-k)}
+.baslik-satir{display:flex; align-items:center; justify-content:space-between; gap:10px}
+.dinle-btn{flex:none; display:inline-flex; align-items:center; gap:8px; min-height:clamp(40px,5.6vh,50px); padding:0 18px 0 7px; border-radius:999px; border:3px solid var(--mavi-k); background:#fff; color:var(--mavi-k); font:800 clamp(15px,2.2vh,18px) var(--baslik); box-shadow:0 4px 0 var(--mavi-k); transition:transform .1s}
+.dinle-btn i{display:grid; place-items:center; width:clamp(28px,4.2vh,36px); height:clamp(28px,4.2vh,36px); border-radius:50%; background:var(--mavi-k); color:#fff; font-style:normal; font-size:.85em}
+.dinle-btn:hover{transform:translateY(-2px)}
+.dinle-btn:active{transform:translateY(2px); box-shadow:0 2px 0 var(--mavi-k)}
+.dinle-btn[aria-pressed="true"]{background:var(--mavi-a)}
+.dinle-btn[aria-pressed="true"] i{animation:nabiz 1s ease-in-out infinite}
+@keyframes nabiz{50%{transform:scale(1.12)}}
+.ok-k{border-radius:6px; transition:background-color .12s, box-shadow .12s}
+.ok-k.su{background:#ffd76a; box-shadow:0 0 0 3px #ffd76a}
 .satirlar{
   flex:1; min-height:0; overflow:auto;
   font-size:var(--sigdir, calc(clamp(16px, 1.3vh + 1vw, 24px) + var(--yazi,0) * 2px)); line-height:1.7; font-weight:700;
@@ -413,7 +423,10 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
         <div class="oku-izgara">
           <div class="oku-resim"><img src="img/s01.webp" alt="Duru kütüphanede turuncu kitabı buluyor"></div>
           <div class="oku-sag">
-            <h1 class="bolum-baslik">1. Turuncu kitap</h1>
+            <div class="baslik-satir">
+              <h1 class="bolum-baslik" id="bolumBaslik"><span class="no">1.</span> Turuncu kitap</h1>
+              <button type="button" class="dinle-btn" id="dinleBtn" aria-pressed="false"><i>▶</i><span>Dinle</span></button>
+            </div>
             <div class="satirlar" id="satirlar">
               <p>Perşembe, Duru’nun en sevdiği gündü.</p>
               <p>Çünkü perşembe günleri sınıfça <span class="kelime" tabindex="0" data-kelime="kütüphane" data-anlam="Kitapların okunduğu ve ödünç alındığı yer.">kütüphane</span>ye giderlerdi.</p>
@@ -423,6 +436,7 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
               <p>Duru kitabı kütüphaneci Selin Hanım’dan hemen <span class="kelime" tabindex="0" data-kelime="ödünç" data-anlam="Geri vermek üzere bir süreliğine almak.">ödünç</span> aldı.</p>
             </div>
             <div class="sozluk" id="sozluk" hidden></div>
+            <audio id="okumaSes" src="ses/s01.mp3" preload="auto"></audio>
             <button type="button" class="dugme turuncu" id="okudum">Okudum, oyuna geç →</button>
           </div>
         </div>
@@ -636,11 +650,73 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
     c.hidden = !c.hidden; b.textContent = c.hidden ? '📖 Metne bak' : '✕ Metni kapat'; cal('tik');
   });
 
+  // ===== SESLİ OKUMA: Vids anlatıcısı + kelime takibi =====
+  // OKUMA_ZAMAN: ekrandaki her kelimenin (başlık dahil, bölüm numarası hariç) sesteki başlangıç saniyesi.
+  // ses/vids/zamanla.py doldurur.
+  const OKUMA_ZAMAN = /*ZAMAN*/[0.0,0.58,1.7,2.22,2.62,2.98,3.46,4.16,4.36,4.94,5.32,5.72,6.36,7.7,7.86,8.34,8.78,9.4,9.64,9.78,10.78,11.04,11.2,11.62,12.26,12.54,12.76,13.0,14.18,14.62,15.18,15.34,15.54,15.68,15.9,16.08,16.96,17.26,17.66,17.84,18.66,18.94,19.32,19.84,20.18,20.6,20.84,21.26]/*ZAMAN*/;
+  const DINLEME = { baslatma: 0, tamamlama: 0 };
+  (function () {
+    const metinler = [];
+    [$('#bolumBaslik'), satirBox].forEach(k => {
+      const w = document.createTreeWalker(k, NodeFilter.SHOW_TEXT,
+        { acceptNode: n => n.parentElement.closest('.no') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+      let n; while ((n = w.nextNode())) metinler.push(n);
+      metinler.push(null); // kutu sınırı = kelime sınırı
+    });
+    // Kelime sınırı düğümler arasında aranır: "kütüphane" (sözlük kelimesi) + "ye" tek kelimedir.
+    let i = -1, icinde = false;
+    metinler.forEach(n => {
+      if (!n) { icinde = false; return; }
+      const t = n.textContent, frag = document.createDocumentFragment();
+      t.split(/(\s+)/).forEach(p => {
+        if (!p) return;
+        if (/^\s+$/.test(p)) { frag.append(p); icinde = false; return; }
+        if (!icinde) { i++; icinde = true; }
+        const sp = document.createElement('span'); sp.className = 'ok-k'; sp.dataset.i = i; sp.textContent = p; frag.append(sp);
+      });
+      n.replaceWith(frag);
+    });
+    const ses = $('#okumaSes'), btn = $('#dinleBtn');
+    if (OKUMA_ZAMAN && OKUMA_ZAMAN.length !== i + 1) console.warn('Okuma zamanı kelime sayısını tutmuyor', OKUMA_ZAMAN.length, i + 1);
+    let su = -1, raf = 0;
+    const isaretle = k => {
+      if (k === su) return;
+      $$('.ok-k.su').forEach(x => x.classList.remove('su'));
+      su = k;
+      if (k < 0) return;
+      const el = $$(`.ok-k[data-i="${k}"]`);
+      el.forEach(x => x.classList.add('su'));
+      const e = el[0];
+      if (e && satirBox.contains(e)) {
+        const a = e.getBoundingClientRect().top - satirBox.getBoundingClientRect().top + satirBox.scrollTop, h = satirBox.clientHeight;
+        if (a < satirBox.scrollTop + 8 || a > satirBox.scrollTop + h - 48) satirBox.scrollTo({ top: Math.max(0, a - h / 3), behavior: 'smooth' });
+      }
+    };
+    const dongu = () => {
+      if (OKUMA_ZAMAN) { const t = ses.currentTime; let k = -1; while (k + 1 < OKUMA_ZAMAN.length && OKUMA_ZAMAN[k + 1] <= t) k++; isaretle(k); }
+      raf = requestAnimationFrame(dongu);
+    };
+    const durum = (calis, yazi) => {
+      btn.setAttribute('aria-pressed', String(calis));
+      btn.querySelector('i').textContent = calis ? '❚❚' : '▶';
+      btn.querySelector('span').textContent = yazi;
+    };
+    btn.onclick = () => {
+      if (ses.paused) {
+        if (ses.ended || ses.currentTime === 0) { ses.currentTime = 0; DINLEME.baslatma++; }
+        ses.play().then(() => { durum(true, 'Durdur'); cancelAnimationFrame(raf); dongu(); }).catch(() => durum(false, 'Dinle'));
+      } else { ses.pause(); cancelAnimationFrame(raf); durum(false, 'Devam et'); }
+    };
+    ses.addEventListener('ended', () => { DINLEME.tamamlama++; cancelAnimationFrame(raf); isaretle(-1); durum(false, 'Yeniden dinle'); });
+    window.__okumaDur = () => { if (!ses.paused) { ses.pause(); cancelAnimationFrame(raf); durum(false, 'Devam et'); } };
+  })();
+
   // ===== Patika =====
   const SIRA = ['giris', 'oku', 'e1', 'e2', 'e3', 'sonuc'];
   let acik = 0;
   function git(ad, sesli) {
     const n = SIRA.indexOf(ad);
+    if (ad !== 'oku' && window.__okumaDur) window.__okumaDur();
     SIRA.forEach((s, i) => {
       $('#p-' + s).hidden = s !== ad;
       const ist = $(`.istasyon[data-git="${s}"]`);
@@ -794,7 +870,7 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
     });
     // Sonucu dışarı ver: üst sayfa (Okumino / CTF) dinleyebilir; tarayıcıda da saklanır.
     const sonuc = { tip: 'okumino:adim-bitti', kitap: 'kus_mu_top_mu', adim: ADIM, damla: toplam, maks: MAKS,
-      deneme: KAYIT.reduce((a, x) => a + x.deneme, 0), sorular: KAYIT, tahmin: TAHMIN, zaman: new Date().toISOString() };
+      deneme: KAYIT.reduce((a, x) => a + x.deneme, 0), sorular: KAYIT, tahmin: TAHMIN, dinleme: DINLEME, zaman: new Date().toISOString() };
     sakla('kus_mu_top_mu_adim' + ADIM, JSON.stringify(sonuc));
     try { if (window.parent !== window) window.parent.postMessage(sonuc, '*'); } catch (e) {}
     document.dispatchEvent(new CustomEvent('okumino:adim-bitti', { detail: sonuc }));
