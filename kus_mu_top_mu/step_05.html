@@ -945,8 +945,15 @@ const OKUMA_ZAMAN = /*ZAMAN*/[0.0,0.52,2.04,2.5,2.94,3.2,3.34,3.58,4.62,4.9,5.34
           }
           if (e.data.tip === 'coz') {
             const t0 = performance.now();
+            const temizle = t => { let o = '', d = 0; for (const c of t) { if (c === '(' || c === '[') d++; else if (c === ')' || c === ']') d = Math.max(0, d - 1); else if (!d) o += c; } return o.split(' ').filter(Boolean).join(' '); };
             const r = await asr(e.data.ses, { language: 'turkish', task: 'transcribe', chunk_length_s: 30 });
-            self.postMessage({ tip: 'metin', metin: r.text, ms: Math.round(performance.now() - t0), cihaz });
+            let metin = temizle(r.text), yeniden = false;
+            if (metin.split(' ').filter(Boolean).length < (e.data.n || 0) * 0.3) {   // yalnız etiket ya da çok az kelime: parçalı yeniden çöz
+              const r2 = await asr(e.data.ses, { language: 'turkish', task: 'transcribe', chunk_length_s: 10, stride_length_s: 2 });
+              const m2 = temizle(r2.text); yeniden = true;
+              if (m2.split(' ').length > metin.split(' ').length) metin = m2;
+            }
+            self.postMessage({ tip: 'metin', metin, ham: r.text, yeniden, ms: Math.round(performance.now() - t0), cihaz });
           }
         } catch (x) { self.postMessage({ tip: 'hata', hata: String(x && x.message || x) }); }
       };`;
@@ -1012,7 +1019,9 @@ const OKUMA_ZAMAN = /*ZAMAN*/[0.0,0.52,2.04,2.5,2.94,3.2,3.34,3.58,4.62,4.9,5.34
       if (D.okuma_sn < 3) { D.durum = 'yetersiz_ses'; return; }
       D.durum = 'cozuluyor';
       if (!worker) { D.durum = 'model_yok'; return; }
-      modelHazir.then(() => worker.postMessage({ tip: 'coz', ses }, [ses.buffer])).catch(() => { D.durum = 'model_yok'; });
+      // Baştaki ve sondaki sessizlik atılır (~0,5 sn pay): uzun sessiz kuyrukta Whisper "(Müzik)" gibi etiket uyduruyordu.
+      const kesik = ses.slice(Math.max(0, (ilk - 2) * 4096), Math.min(n, (son + 3) * 4096));
+      modelHazir.then(() => worker.postMessage({ tip: 'coz', ses: kesik, n: BEKLENEN.length }, [kesik.buffer])).catch(() => { D.durum = 'model_yok'; });
     }
     function ozdegAc() { $('#ozdeg').classList.add('acik'); sigdir(); }
     $$('#ozdegSec button').forEach(b => b.onclick = () => {
@@ -1024,9 +1033,9 @@ const OKUMA_ZAMAN = /*ZAMAN*/[0.0,0.52,2.04,2.5,2.94,3.2,3.34,3.58,4.62,4.9,5.34
 
     // --- Hizalama: beklenen kelimeler ile duyulanlar (Levenshtein, kelime düzeyi) ---
     const TRM = { 'İ': 'i', 'I': 'ı', 'Ç': 'ç', 'Ğ': 'ğ', 'Ö': 'ö', 'Ş': 'ş', 'Ü': 'ü', 'Â': 'a', 'â': 'a', 'Î': 'i', 'î': 'i', 'Û': 'u', 'û': 'u' };
-    const nrm = w => w.replace(/[İIÇĞÖŞÜÂâÎîÛû]/g, c => TRM[c]).toLowerCase().replace(/[^a-zçğıöşü0-9]/g, '');
-    function coz({ metin, ms, cihaz }) {
-      D.cozum_ms = ms; D.cihaz = cihaz; D.duyulan = metin.trim();
+    const nrm = w => w.replace(/[İIÇĞÖŞÜÂâÎîÛû]/g, c => TRM[c]).toLowerCase().replace(/[^a-zçğıöşü0-9]/g, '').replace(/(.)\1+/g, '$1');   // "Hışırr" ~ "hışır": uzatılan harf tek sayılır
+    function coz({ metin, ham, yeniden, ms, cihaz }) {
+      D.cozum_ms = ms; D.cihaz = cihaz; D.duyulan = metin.trim(); D.ham_metin = ham; D.yeniden_cozuldu = !!yeniden;
       const b = BEKLENEN.map(nrm).filter(Boolean);
       let h = metin.split(/\s+/).map(nrm).filter(Boolean);
       const bs = BASLIK.map(nrm); if (h[0] === bs[0] && h[1] === bs[1]) h = h.slice(2);   // başlığı okuduysa çıkar
@@ -1074,6 +1083,9 @@ const OKUMA_ZAMAN = /*ZAMAN*/[0.0,0.52,2.04,2.5,2.94,3.2,3.34,3.58,4.62,4.9,5.34
   }
   function okumaRaporu() {
     const D = OKUMA.veri; if (D.durum !== 'otomatik_tahmin') return null;
+    // %50'nin altı çoğu zaman tanıma hatasıdır (gürültü, uzak mikrofon): çocuğa sayı gösterilmez, veri öğretmene yine gider.
+    if (!(D.dogruluk >= .5)) { D.cocuga = 'anlasilamadi'; return { anlasilmadi: true }; }
+    D.cocuga = 'sonuc';
     const y = D.dogruluk >= .95 ? 3 : D.dogruluk >= .9 ? 2 : 1;
     const bak = [...new Set((D.hatalar || []).filter(h => h.tip === 'atlama' || h.tip === 'yanlis_okuma')
       .map(h => h.beklenen.replace(/[^\p{L}’']/gu, '')))].slice(0, 5);
@@ -1081,6 +1093,12 @@ const OKUMA_ZAMAN = /*ZAMAN*/[0.0,0.52,2.04,2.5,2.94,3.2,3.34,3.58,4.62,4.9,5.34
   }
   function popSonucCiz() {
     const R = okumaRaporu(); if (!R) return false;
+    if (R.anlasilmadi) {
+      $('#yildiz').innerHTML = ''; $('#popBak').innerHTML = '';
+      $('#popYazi').textContent = 'Sesini tam duyamadım. Sorun değil! Şimdi sayfayı birlikte dinleyelim.';
+      $('#popBekle').hidden = true; $('#popSonuc').hidden = false; clearInterval(sozSaat); clearTimeout(atlaSaat);
+      return true;
+    }
     $('#yildiz').innerHTML = [1, 2, 3].map(i => `<span class="${i <= R.y ? '' : 'bos'}">⭐</span>`).join('');
     $('#popYazi').textContent = `${R.kelime} kelimeden ${R.dogru} tanesini doğru okudun! ${R.y === 3 ? 'Harika!' : R.y === 2 ? 'Çok iyi!' : 'Güzel deneme!'}`;
     $('#popBak').innerHTML = R.bak.length ? `<p>Bu kelimelere bir daha bak:</p><div>${R.bak.map(w => `<span>${w}</span>`).join('')}</div>` : '';
@@ -1104,7 +1122,7 @@ const OKUMA_ZAMAN = /*ZAMAN*/[0.0,0.52,2.04,2.5,2.94,3.2,3.34,3.58,4.62,4.9,5.34
   $('#popDinle').onclick = popKapat; $('#popAtla').onclick = popKapat;
   function okumaOzetCiz() {
     const R = okumaRaporu(), o = $('#okumaOzet');
-    if (!R) { o.hidden = true; return; }
+    if (!R || R.anlasilmadi) { o.hidden = true; return; }
     o.hidden = false; o.textContent = `${'⭐'.repeat(R.y)} ${R.kelime} kelimeden ${R.dogru} tanesini doğru okudun.`;
   }
   function cocukRaporGuncelle() { if (popAcik) popSonucCiz(); okumaOzetCiz(); }

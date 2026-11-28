@@ -489,6 +489,54 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
   .dy .haklar{display:none}
   .dy-tus{gap:4px}
   .dy-tus button{min-width:52px; padding:2px 4px; flex-direction:column; gap:0; font-size:13px}
+  /* 4 olay kartı dar ekranda 2x2 dizilir */
+  .sira-yuvalar[style*="repeat(4"],.sira-kartlar[style*="repeat(4"]{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+/* "Bence…" cümlesinin sabit başı */
+.kkart.sabit{border-color:var(--cizgi-k); background:#fff1c9; cursor:default}
+/* Tasarla: söz kuşu */
+.tasarla{flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr); gap:clamp(10px,2vw,24px); align-items:center; align-content:center}
+.tas-onizleme{display:flex; flex-direction:column; align-items:center; gap:8px; padding:clamp(8px,1.6vh,16px); border-radius:22px; background:#fff7e3; border:3px dashed #f6d27a}
+.tas-kus{--kus:#e6dccb; width:min(100%,240px); height:auto; transition:transform 1s ease-in, opacity 1s}
+.tas-kus.uc{transform:translate(60px,-40px) rotate(-10deg) scale(.8); opacity:.2}
+.tas-yazi{margin:0; min-height:1.3em; font:800 clamp(17px,2.8vh,24px)/1.3 var(--okuma); color:var(--mavi-k); text-align:center}
+.tas-gruplar{display:flex; flex-direction:column; gap:clamp(8px,1.6vh,14px)}
+.tas-grup p{margin:0 0 6px; font:800 clamp(14px,2.1vh,17px) var(--baslik); color:var(--turuncu-k)}
+.tas-grup > div{display:flex; flex-wrap:wrap; gap:8px}
+.tas-grup .renk{width:clamp(36px,6vh,48px); height:clamp(36px,6vh,48px); border-radius:50%; background:var(--r); border:4px solid #fff; box-shadow:0 0 0 2px var(--cizgi-k); cursor:pointer}
+.tas-grup .secili{outline:4px solid var(--mavi-k); outline-offset:2px}
+.tas-grup .kkart.secili{background:#e6f0ff}
+.tasarla > .dugme{grid-column:1/-1; justify-self:center}
+.tasarla > .dugme:disabled{opacity:.45; cursor:not-allowed; transform:none}
+/* Konuş: sesli cevap */
+.konus{flex:1; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(8px,1.8vh,16px); text-align:center}
+.konus img{height:clamp(70px,15vh,130px); width:auto}
+.kayit-sure{font:800 clamp(18px,3vh,26px) var(--baslik); color:#d64545}
+.konus audio{width:min(100%,360px)}
+@media (max-width:560px){
+  .tasarla{grid-template-columns:1fr; gap:6px; align-content:start}
+  .tas-onizleme{flex-direction:row; justify-content:center; gap:10px; padding:6px 10px}
+  .tas-kus{width:84px} .tas-yazi{font-size:16px; text-align:left}
+  .tas-gruplar{gap:6px} .tas-grup p{margin-bottom:3px; font-size:13px}
+  .tas-grup > div{gap:5px} .tas-grup .kkart{font-size:14px; padding:3px 8px; box-shadow:0 2px 0 var(--cizgi-k)}
+  .tas-grup .renk{width:32px; height:32px; border-width:3px}
+  .etk:has(.tasarla) .mino{display:none}   /* yönerge soruda yazılı; küçük ekranda yer açılır */
+}
+/* kelime kartları küçük telefonda (360x640) Mino kutusunun altına inmesin */
+@media (max-width:560px){
+  .kkart{padding:5px 10px; font-size:16px; border-width:2px; box-shadow:0 3px 0 var(--cizgi-k)}
+  .kkartlar,.cumle-yuvalar{gap:5px}
+  .cumle-yuvalar{min-height:44px; padding:6px 8px}
+}
+@media (max-width:560px) and (max-height:700px){
+  /* küçük telefonda giriş: üçüncü tahmin düğmesi ekranın altında kalmasın */
+  .giris-bilgi{display:none}
+  .giris-kart h2{font-size:20px}
+  .tahmin-buyuk button{padding:6px 10px; font-size:15px; min-height:0}
+  .tas-kus{width:60px} .tas-onizleme{padding:4px 8px}
+  .tasarla > .dugme{padding:7px 16px; font-size:15px}
+  .etk .soru{font-size:15px; padding:6px 10px}
+  .yaz-alan{gap:8px}
 }
 </style>
 </head>
@@ -1032,7 +1080,95 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
     ipucu: y => y.some((h, i) => h === 'I' && e.cevap[i] === 'İ') ? 'Neredeyse! Bu kelimedeki i harfinin üstünde nokta var: İ.'
       : `Kırmızı kutulara bir daha bak. Kelime ${e.ilk} harfiyle başlıyor.`
   });
-  ETK.forEach(e => ({ secim: secimKur, ikili: ikiliKur, sira: siraKur, harf: harfKur })[e.tip](e));
+  // Kelime kartları: kartlar sırayla cümleye eklenir, eklenen karta dokununca geri çıkar; çeldirici kartlar var.
+  function kelimeKur(e) {
+    const onek = e.onek || [], cevaplar = e.cevaplar || [e.cevap];
+    const q = soru(e.id, [...onek, ...e.cevap].join(' '), 3, $(`#${e.id}Hak`)); q.uretim = [];
+    const cumle = [], kutu = $(`#${e.id}Cumle`);
+    $(`#${e.id}Kartlar`).innerHTML = karistir(e.kartlar.map((w, i) => ({ w, i }))).map(x => `<button type="button" class="kkart" data-k="${x.i}">${x.w}</button>`).join('');
+    const ciz = () => {
+      kutu.innerHTML = onek.map(w => `<span class="kkart sabit">${w}</span>`).join('') + cumle.map((k, i) => `<button type="button" class="kkart" data-i="${i}">${e.kartlar[k]}</button>`).join('');
+      $$('.kkart', kutu).forEach(b => b.onclick = () => { if (kutu.classList.contains('dogru')) return; cumle.splice(Number(b.dataset.i), 1); cal('tik'); ciz(); });
+      $$(`#${e.id}Kartlar .kkart`).forEach(b => b.disabled = cumle.includes(Number(b.dataset.k)));
+      $(`#${e.id}Kontrol`).disabled = cumle.length !== e.cevap.length;
+    };
+    $$(`#${e.id}Kartlar .kkart`).forEach(b => b.onclick = () => { if (cumle.length >= e.cevap.length) return; cumle.push(Number(b.dataset.k)); cal('tik'); ciz(); });
+    $(`#${e.id}Sil`).onclick = () => { cumle.length = 0; kutu.classList.remove('hatali'); cal('tik'); ciz(); };
+    $(`#${e.id}Kontrol`).onclick = () => {
+      const yazilan = cumle.map(k => e.kartlar[k]); q.uretim.push([...onek, ...yazilan].join(' '));
+      if (cevaplar.some(c => c.join(' ') === yazilan.join(' '))) {
+        kutu.classList.add('dogru'); $$(`#${e.id}Kartlar .kkart, #${e.id}Sil, #${e.id}Kontrol`).forEach(b => b.disabled = true);
+        dogruCevap(q, $(`#${e.id}Kontrol`)); mino(`#${e.id}Mino`, e.bitti, 'iyi'); sonraki(e.id); return;
+      }
+      yanlisCevap(q); kutu.classList.add('hatali');
+      const w = yazilan.find(w => (e.ipuclari || {})[w]);
+      mino(`#${e.id}Mino`, w ? e.ipuclari[w] : e.ipucu, 'dur');
+      setTimeout(() => { cumle.length = 0; kutu.classList.remove('hatali'); ciz(); }, 1300);
+    };
+    ciz();
+  }
+
+  // Tasarla: renk ve söz (ve kime) seçilir, kâğıt kuş önizlemesi oluşur. Yanlışı yok; tamamlayınca damlalar gelir.
+  function tasarlaKur(e) {
+    const q = soru(e.id, e.ad, 3, $(`#${e.id}Hak`)); q.uretim = [];
+    const sec = {}, G = e.gruplar;
+    $(`#${e.id}Gruplar`).innerHTML = G.map((g, gi) => `<div class="tas-grup"><p>${g.ad}</p><div>${g.secenekler.map((o, oi) => g.tip === 'renk'
+      ? `<button type="button" class="renk" data-g="${gi}" data-o="${oi}" style="--r:${o[0]}" aria-label="${o[1]}" title="${o[1]}"></button>`
+      : `<button type="button" class="kkart" data-g="${gi}" data-o="${oi}">${o[1]}</button>`).join('')}</div></div>`).join('');
+    const tuslar = () => $$(`#${e.id}Gruplar button`);
+    const ciz = () => {
+      const ri = G.findIndex(g => g.tip === 'renk');
+      $(`#${e.id}Kus`).style.setProperty('--kus', ri >= 0 && sec[ri] != null ? G[ri].secenekler[sec[ri]][0] : '#e6dccb');
+      $(`#${e.id}Yazi`).textContent = G.map((g, gi) => g.tip === 'renk' ? null : (sec[gi] != null ? g.secenekler[sec[gi]][1] : '…')).filter(Boolean).join(' ');
+      tuslar().forEach(b => b.classList.toggle('secili', sec[b.dataset.g] === Number(b.dataset.o)));
+      $(`#${e.id}Kontrol`).disabled = G.some((_, gi) => sec[gi] == null);
+    };
+    tuslar().forEach(b => b.onclick = () => { sec[b.dataset.g] = Number(b.dataset.o); cal('tik'); ciz(); });
+    $(`#${e.id}Kontrol`).onclick = () => {
+      q.uretim.push(Object.fromEntries(G.map((g, gi) => [g.ad, g.secenekler[sec[gi]][1]])));
+      [...tuslar(), $(`#${e.id}Kontrol`)].forEach(b => b.disabled = true);
+      dogruCevap(q, $(`#${e.id}Kontrol`)); mino(`#${e.id}Mino`, e.bitti, 'iyi');
+      setTimeout(() => $(`#${e.id}Kus`).classList.add('uc'), 500); sonraki(e.id, 900);
+    };
+    ciz();
+  }
+
+  // Konuş: çocuk cevabını sesli kaydeder ve kendini dinler. Damla yok; öğretmen rubriği için kanıt.
+  // Ses yalnız bu sayfada, bellekte durur, sonuçla gönderilmez (veli onayı konusu açık); yalnız süre ve davranış gider.
+  function konusKur(e) {
+    const V = { kayit_sn: 0, tekrar: 0, dinledi: false, atladi: false, mikrofon: null };
+    let rec = null, parca = [], t0 = 0, saat = 0, akis = null, bitti = false;
+    const k = $(`#${e.id}Kayit`), ses = $(`#${e.id}Ses`), sure = $(`#${e.id}Sure`);
+    const kapat = () => { if (akis) akis.getTracks().forEach(t => t.stop()); akis = null; };
+    const sonla = () => {
+      if (bitti) return; bitti = true; kapat();
+      [k, $(`#${e.id}Bitti`), $(`#${e.id}Atla`)].forEach(b => b.disabled = true);
+      EKSTRA.push({ madde: `${e.id}.konus`, kodlar: e.kodlar, uygulama: e.uygulama, kanit: 'ogretmen', deger: V });
+      mino(`#${e.id}Mino`, V.kayit_sn ? 'Teşekkürler! Cevabını öğretmenin de dinleyebilir.' : 'Tamam! Cevabını öğretmenine de söyleyebilirsin.', 'iyi');
+      sonraki(e.id, 600);
+    };
+    const durdur = () => { clearInterval(saat); if (rec && rec.state === 'recording') rec.stop(); };
+    k.onclick = async () => {
+      if (rec && rec.state === 'recording') { durdur(); return; }
+      try { akis = akis || await navigator.mediaDevices.getUserMedia({ audio: true }); V.mikrofon = true; }
+      catch (x) { V.mikrofon = false; mino(`#${e.id}Mino`, 'Mikrofon açılamadı. Cevabını öğretmenine söyleyebilirsin.', 'dur'); $(`#${e.id}Atla`).textContent = 'Devam et →'; return; }
+      if (V.kayit_sn) V.tekrar++;
+      parca = []; rec = new MediaRecorder(akis); rec.ondataavailable = x => parca.push(x.data);
+      rec.onstop = () => {
+        V.kayit_sn = +((performance.now() - t0) / 1000).toFixed(1);
+        ses.src = URL.createObjectURL(new Blob(parca, { type: rec.mimeType })); ses.hidden = false; sure.hidden = true;
+        k.textContent = '🎙️ Yeniden kaydet'; k.classList.replace('kirmizi', 'turuncu'); $(`#${e.id}Bitti`).hidden = false;
+        mino(`#${e.id}Mino`, 'Harika! Kendini dinleyebilirsin.', 'iyi');
+      };
+      rec.start(); t0 = performance.now(); cal('tik');
+      k.textContent = '⏹ Bitir'; k.classList.replace('turuncu', 'kirmizi'); sure.hidden = false; sure.textContent = '● 0 sn';
+      saat = setInterval(() => { const sn = Math.floor((performance.now() - t0) / 1000); sure.textContent = `● ${sn} sn`; if (sn >= 30) durdur(); }, 250);
+    };
+    ses.onplay = () => { V.dinledi = true; };
+    $(`#${e.id}Bitti`).onclick = sonla;
+    $(`#${e.id}Atla`).onclick = () => { durdur(); V.atladi = !V.kayit_sn; sonla(); };
+  }
+  ETK.forEach(e => ({ secim: secimKur, ikili: ikiliKur, sira: siraKur, harf: harfKur, kelime: kelimeKur, tasarla: tasarlaKur, konus: konusKur })[e.tip](e));
 
   const MAKS = 12;
   $('#damlaMaks').textContent = MAKS;
@@ -1045,6 +1181,7 @@ html[data-sinif="1"] .dy p,html[data-sinif="2"] .dy p,html[data-sinif="1"] .cekm
     $('#ozet').innerHTML = ETK.map(e => {
       const k = KAYIT.filter(x => x.etkinlik === e.id);
       const p = k.reduce((a, x) => a + x.puan, 0), m = k.reduce((a, x) => a + x.maks, 0), d = k.reduce((a, x) => a + x.deneme, 0);
+      if (!m) return `<div><span>${e.ad}</span><em>🎙️</em><small>sesli cevap</small></div>`;
       return `<div><span>${e.ad}</span><em>💧 ${p} / ${m}</em><small>${k.length} soru · ${d} deneme</small></div>`;
     }).join('');
     let n = 0; const say = setInterval(() => { $('#skorSay').textContent = n; if (n++ >= toplam) clearInterval(say); }, 60);
